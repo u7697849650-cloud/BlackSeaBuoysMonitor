@@ -12,3 +12,19 @@ The swell-conditions indicator is a configurable product heuristic, not an offic
 ## Marine activity profiles
 
 All 12 activities have distinct factory thresholds, required parameters and minimum useful-window durations. Daylight activities use Open-Meteo sunrise +30 minutes through sunset −30 minutes, with a local 07:00–19:00 fallback. Fishing permits day-and-night evaluation by default. These profiles are indicative product defaults, not official safety standards.
+## Built with OpenAI Codex
+
+This project was developed with extensive assistance from OpenAI Codex and GPT-5.5.
+
+OpenAI Codex was used throughout the development process for:
+
+- Designing the Android application architecture.
+- Generating Kotlin and Jetpack Compose code.
+- Implementing MVVM components and data models.
+- Building networking, parsing and data-processing logic.
+- Writing unit tests.
+- Refactoring and improving code quality.
+- Debugging runtime and build issues.
+- Producing technical documentation and project reports.
+
+The final application was designed, reviewed, tested and validated by the project author, while OpenAI Codex significantly accelerated implementation and engineering productivity.
