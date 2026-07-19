@@ -1,0 +1,39 @@
+package bg.blacksea.buoys.domain.activity
+
+import bg.blacksea.buoys.domain.swell.AssessmentConfidence
+import bg.blacksea.buoys.forecast.DailyAtmosphericForecast
+import java.time.*
+
+enum class ActivityTimeMode{DAYLIGHT_ONLY,DAY_AND_NIGHT,CUSTOM_TIME_WINDOW}
+enum class ExperienceLevel{BEGINNER,INTERMEDIATE,ADVANCED,CUSTOM}
+enum class FishingMode{SHORE,PIER,BOAT}
+enum class MarineParameter{AIR_TEMPERATURE,APPARENT_TEMPERATURE,SEA_TEMPERATURE,WAVE_HEIGHT,WAVE_PERIOD,SWELL_HEIGHT,SWELL_PERIOD,WIND_SPEED,WIND_GUST,WIND_DIRECTION,PRECIPITATION,THUNDERSTORM_PROBABILITY,VISIBILITY,UV_INDEX,CURRENT_SPEED,OFFICIAL_WARNING}
+data class NumericRange(val minimum:Double?=null,val maximum:Double?=null){init{require(minimum==null||maximum==null||minimum<=maximum)}}
+data class ActivityTimePolicy(val defaultMode:ActivityTimeMode,val allowNightEvaluation:Boolean=false,val defaultStartTime:LocalTime?=null,val defaultEndTime:LocalTime?=null,val sunriseOffsetMinutes:Int=30,val sunsetOffsetMinutes:Int=30)
+data class ActivityThresholds(val airTemperatureCelsius:NumericRange?=null,val seaTemperatureCelsius:NumericRange?=null,val waveHeightMeters:NumericRange?=null,val wavePeriodSeconds:NumericRange?=null,val swellHeightMeters:NumericRange?=null,val swellPeriodSeconds:NumericRange?=null,val windSpeedMetersPerSecond:NumericRange?=null,val windGustMetersPerSecond:NumericRange?=null,val precipitationMillimetersPerHour:NumericRange?=null,val thunderstormProbabilityPercent:NumericRange?=null,val visibilityKilometers:NumericRange?=null,val uvIndex:NumericRange?=null,val currentSpeedMetersPerSecond:NumericRange?=null)
+data class ActivityEvaluationProfile(val activityType:MarineActivityType,val enabled:Boolean=true,val timePolicy:ActivityTimePolicy,val thresholds:ActivityThresholds,val requiredParameters:Set<MarineParameter>,val optionalParameters:Set<MarineParameter> = emptySet(),val minimumRequiredParameterCount:Int=2,val minimumConfidence:AssessmentConfidence=AssessmentConfidence.MEDIUM,val minimumWindowHours:Int=1,val experienceLevel:ExperienceLevel=ExperienceLevel.INTERMEDIATE)
+data class DaylightWindow(val date:LocalDate,val sunrise:Instant?,val sunset:Instant?,val evaluationStart:Instant,val evaluationEnd:Instant,val isFallback:Boolean)
+
+object ActivityProfileFactory{
+ private val day=ActivityTimePolicy(ActivityTimeMode.DAYLIGHT_ONLY)
+ private val all=ActivityTimePolicy(ActivityTimeMode.DAY_AND_NIGHT,true)
+ fun defaults():Map<MarineActivityType,ActivityEvaluationProfile> = MarineActivityType.entries.associateWith(::default)
+ fun default(a:MarineActivityType):ActivityEvaluationProfile=UserActivityProfilesRuntime.profiles[a]?.let{u->factoryDefault(a).copy(timePolicy=factoryDefault(a).timePolicy.copy(defaultMode=u.timeMode,defaultStartTime=u.customStartTime,defaultEndTime=u.customEndTime,allowNightEvaluation=u.includeNightHours||u.timeMode==ActivityTimeMode.DAY_AND_NIGHT),thresholds=u.thresholds,experienceLevel=u.experienceLevel)}?:factoryDefault(a)
+ fun factoryDefault(a:MarineActivityType):ActivityEvaluationProfile=when(a){
+  MarineActivityType.SWIMMING->profile(a,day,ActivityThresholds(seaTemperatureCelsius=NumericRange(20.0,30.0),waveHeightMeters=NumericRange(0.0,.5),windSpeedMetersPerSecond=NumericRange(0.0,6.0),windGustMetersPerSecond=NumericRange(0.0,9.0),thunderstormProbabilityPercent=NumericRange(0.0,15.0)),setOf(MarineParameter.SEA_TEMPERATURE,MarineParameter.WAVE_HEIGHT),1)
+  MarineActivityType.BEACH->profile(a,day,ActivityThresholds(airTemperatureCelsius=NumericRange(26.0,33.0),seaTemperatureCelsius=NumericRange(20.0,32.0),windSpeedMetersPerSecond=NumericRange(0.0,8.0),precipitationMillimetersPerHour=NumericRange(0.0,.2),thunderstormProbabilityPercent=NumericRange(0.0,15.0)),setOf(MarineParameter.APPARENT_TEMPERATURE,MarineParameter.SEA_TEMPERATURE),2,setOf(MarineParameter.UV_INDEX))
+  MarineActivityType.SUP->profile(a,day,ActivityThresholds(waveHeightMeters=NumericRange(0.0,.35),windSpeedMetersPerSecond=NumericRange(0.0,4.5),windGustMetersPerSecond=NumericRange(0.0,7.0),swellHeightMeters=NumericRange(0.0,.4)),setOf(MarineParameter.WAVE_HEIGHT,MarineParameter.WIND_SPEED),1)
+  MarineActivityType.KAYAK->profile(a,day,ActivityThresholds(waveHeightMeters=NumericRange(0.0,.5),windSpeedMetersPerSecond=NumericRange(0.0,5.5),windGustMetersPerSecond=NumericRange(0.0,8.0),swellHeightMeters=NumericRange(0.0,.6)),setOf(MarineParameter.WAVE_HEIGHT,MarineParameter.WIND_SPEED),1)
+  MarineActivityType.SMALL_BOAT->profile(a,day,ActivityThresholds(waveHeightMeters=NumericRange(0.0,.7),windSpeedMetersPerSecond=NumericRange(0.0,6.0),windGustMetersPerSecond=NumericRange(0.0,9.0)),setOf(MarineParameter.WAVE_HEIGHT,MarineParameter.WIND_SPEED),2)
+  MarineActivityType.SAILING->profile(a,day.copy(allowNightEvaluation=true),ActivityThresholds(waveHeightMeters=NumericRange(.2,1.5),windSpeedMetersPerSecond=NumericRange(4.0,10.0),windGustMetersPerSecond=NumericRange(0.0,14.0)),setOf(MarineParameter.WIND_SPEED,MarineParameter.WAVE_HEIGHT),2)
+  MarineActivityType.WINDSURFING->profile(a,day,ActivityThresholds(waveHeightMeters=NumericRange(.2,1.2),windSpeedMetersPerSecond=NumericRange(5.0,10.0),windGustMetersPerSecond=NumericRange(0.0,14.0)),setOf(MarineParameter.WIND_SPEED,MarineParameter.WAVE_HEIGHT),1)
+  MarineActivityType.KITESURFING->profile(a,day,ActivityThresholds(waveHeightMeters=NumericRange(.2,1.3),windSpeedMetersPerSecond=NumericRange(6.0,11.0),windGustMetersPerSecond=NumericRange(0.0,15.0)),setOf(MarineParameter.WIND_SPEED,MarineParameter.WIND_GUST,MarineParameter.WAVE_HEIGHT),1)
+  MarineActivityType.SURFING->profile(a,day,ActivityThresholds(waveHeightMeters=NumericRange(.6,1.8),wavePeriodSeconds=NumericRange(7.0,13.0),swellHeightMeters=NumericRange(.5,1.8),swellPeriodSeconds=NumericRange(7.0,14.0)),setOf(MarineParameter.WAVE_HEIGHT,MarineParameter.WAVE_PERIOD),1)
+  MarineActivityType.DIVING,MarineActivityType.SPEARFISHING->profile(a,day,ActivityThresholds(waveHeightMeters=NumericRange(0.0,.5),windSpeedMetersPerSecond=NumericRange(0.0,5.0),swellHeightMeters=NumericRange(0.0,.5)),setOf(MarineParameter.WAVE_HEIGHT,MarineParameter.SEA_TEMPERATURE),2)
+  MarineActivityType.FISHING->profile(a,all,ActivityThresholds(waveHeightMeters=NumericRange(0.0,1.2),windSpeedMetersPerSecond=NumericRange(0.0,8.0)),setOf(MarineParameter.WAVE_HEIGHT),2)
+ }
+ private fun profile(a:MarineActivityType,t:ActivityTimePolicy,limits:ActivityThresholds,required:Set<MarineParameter>,hours:Int,optional:Set<MarineParameter> = emptySet())=ActivityEvaluationProfile(a,timePolicy=t,thresholds=limits,requiredParameters=required,optionalParameters=optional,minimumRequiredParameterCount=required.size,minimumWindowHours=hours)
+}
+
+fun daylightWindow(date:LocalDate,daily:DailyAtmosphericForecast?,zone:ZoneId=ZoneId.of("Europe/Sofia"),policy:ActivityTimePolicy=ActivityTimePolicy(ActivityTimeMode.DAYLIGHT_ONLY)):DaylightWindow{val sunrise=daily?.sunrise;val sunset=daily?.sunset;val fallback=sunrise==null||sunset==null;val start=if(fallback)date.atTime(7,0).atZone(zone).toInstant()else sunrise!!.plusSeconds(policy.sunriseOffsetMinutes*60L);val end=if(fallback)date.atTime(19,0).atZone(zone).toInstant()else sunset!!.minusSeconds(policy.sunsetOffsetMinutes*60L);return DaylightWindow(date,sunrise,sunset,start,end,fallback)}
+fun ActivityTimePolicy.includes(instant:Instant,date:LocalDate,daily:DailyAtmosphericForecast?,zone:ZoneId=ZoneId.of("Europe/Sofia")):Boolean=when(defaultMode){ActivityTimeMode.DAY_AND_NIGHT->true;ActivityTimeMode.DAYLIGHT_ONLY->{val w=daylightWindow(date,daily,zone,this);!instant.isBefore(w.evaluationStart)&&!instant.isAfter(w.evaluationEnd)};ActivityTimeMode.CUSTOM_TIME_WINDOW->{val time=instant.atZone(zone).toLocalTime();val start=defaultStartTime?:LocalTime.of(7,0);val end=defaultEndTime?:LocalTime.of(19,0);if(start<=end)time in start..end else time>=start||time<=end}}

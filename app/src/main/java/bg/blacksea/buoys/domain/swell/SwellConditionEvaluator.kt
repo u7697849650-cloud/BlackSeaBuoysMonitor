@@ -1,0 +1,15 @@
+package bg.blacksea.buoys.domain.swell
+
+import java.time.*
+import kotlin.math.abs
+
+enum class SwellConditionLevel { LOW, MODERATE, ELEVATED, UNAVAILABLE }
+enum class AssessmentConfidence { LOW, MEDIUM, HIGH }
+data class SwellThresholdConfiguration(val moderateMinimumHeightMeters:Double=.5,val elevatedMinimumHeightMeters:Double=1.0,val moderateMinimumPeriodSeconds:Double=6.0,val elevatedMinimumPeriodSeconds:Double=9.0,val onshoreDirectionToleranceDegrees:Double=45.0,val maximumDataAgeMinutes:Long=180)
+data class SwellConditionInput(val swellHeightMeters:Double?,val swellPeriodSeconds:Double?,val swellDirectionDegrees:Double?,val waveHeightMeters:Double?=null,val wavePeriodSeconds:Double?=null,val windWaveHeightMeters:Double?=null,val windSpeedMetersPerSecond:Double?=null,val windDirectionDegrees:Double?=null,val coastlineOrientationDegrees:Double?=null,val dataAge:Duration?=null,val hasOfficialWarning:Boolean=false)
+data class SwellConditionAssessment(val level:SwellConditionLevel,val confidence:AssessmentConfidence,val summary:String,val details:List<String>,val isBasedOnForecast:Boolean=true,val evaluatedAt:Instant=Instant.now())
+interface SwellConditionEvaluator{fun evaluate(input:SwellConditionInput):SwellConditionAssessment}
+class DefaultSwellConditionEvaluator(private val config:SwellThresholdConfiguration=SwellThresholdConfiguration()):SwellConditionEvaluator{
+ override fun evaluate(input:SwellConditionInput):SwellConditionAssessment{val h=input.swellHeightMeters;val p=input.swellPeriodSeconds;if(h==null||p==null)return result(SwellConditionLevel.UNAVAILABLE,AssessmentConfidence.LOW,"Няма достатъчно данни за оценка",emptyList());var level=when{h>=config.elevatedMinimumHeightMeters&&p>=config.elevatedMinimumPeriodSeconds->SwellConditionLevel.ELEVATED;h>=config.moderateMinimumHeightMeters&&p>=config.moderateMinimumPeriodSeconds->SwellConditionLevel.MODERATE;else->SwellConditionLevel.LOW};var confidence=AssessmentConfidence.HIGH;val details=mutableListOf("Височина на мъртвото вълнение: %.1f m".format(h),"Интервал на мъртвото вълнение: %.1f s".format(p));val coast=input.coastlineOrientationDegrees;val direction=input.swellDirectionDegrees;if(coast==null||direction==null)confidence=AssessmentConfidence.MEDIUM else {val delta=abs(((direction-coast+540)%360)-180);if(delta<=config.onshoreDirectionToleranceDegrees)level=when(level){SwellConditionLevel.LOW->SwellConditionLevel.MODERATE;SwellConditionLevel.MODERATE->SwellConditionLevel.ELEVATED;else->level}};if(input.dataAge?.toMinutes()?.let{it>config.maximumDataAgeMinutes}==true)confidence=AssessmentConfidence.LOW;return result(level,confidence,when(level){SwellConditionLevel.LOW->"Няма изразени признаци за силно мъртво вълнение";SwellConditionLevel.MODERATE->"Възможно е слабо до умерено мъртво вълнение";SwellConditionLevel.ELEVATED->"Има условия за по-осезаемо мъртво вълнение";else->"Няма достатъчно данни за оценка"},details)}
+ private fun result(l:SwellConditionLevel,c:AssessmentConfidence,s:String,d:List<String>)=SwellConditionAssessment(l,c,s,d)
+}

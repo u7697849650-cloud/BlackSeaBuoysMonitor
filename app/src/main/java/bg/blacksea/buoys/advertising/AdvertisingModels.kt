@@ -1,0 +1,14 @@
+package bg.blacksea.buoys.advertising
+
+import bg.blacksea.buoys.domain.activity.MarineActivityType
+import java.time.Instant
+
+enum class AdvertisingFormat{COMPACT_BANNER,SPONSORED_CARD,BACKGROUND_AD}
+enum class AdPlacement{HOME_BOTTOM,HOME_BACKGROUND,FORECAST_BOTTOM,FORECAST_BACKGROUND,ACTIVITIES_AFTER_FAVORITES,ACTIVITY_DETAILS_BOTTOM,ACTIVITY_DETAILS_BACKGROUND,DAY_DETAILS_BOTTOM,SETTINGS_PARTNERS}
+enum class BackgroundImagePosition{CENTER,TOP,BOTTOM}
+enum class BackgroundImageFit{CROP,FIT,FILL_WIDTH}
+data class SponsoredCampaign(val id:String,val enabled:Boolean,val format:AdvertisingFormat,val title:String,val description:String?=null,val sponsorName:String?=null,val imageUrl:String?=null,val actionLabel:String?=null,val actionUrl:String?=null,val startsAt:Instant?=null,val endsAt:Instant?=null,val placements:Set<AdPlacement> = emptySet(),val destinationIds:Set<String> = emptySet(),val activityTypes:Set<MarineActivityType> = emptySet(),val priority:Int=0,val minimumIntervalMinutes:Int=30,val maxImpressionsPerSession:Int=2,val dismissDurationHours:Int=24,val backgroundOpacity:Float?=null,val backgroundBlurDp:Float?=null,val backgroundPosition:BackgroundImagePosition?=null,val backgroundFit:BackgroundImageFit?=null,val scrimOpacity:Float?=null,val allowUserOpacityControl:Boolean=true)
+data class AdvertisingConfiguration(val advertisingEnabled:Boolean=false,val compactBannersEnabled:Boolean=false,val sponsoredCardsEnabled:Boolean=false,val backgroundAdsEnabled:Boolean=false,val admobEnabled:Boolean=false,val campaignsJsonUrl:String?=null,val defaultMinimumIntervalMinutes:Int=30,val defaultMaxImpressionsPerSession:Int=2,val defaultDismissDurationHours:Int=24,val defaultBackgroundOpacity:Float=.08f,val minimumBackgroundOpacity:Float=.03f,val maximumBackgroundOpacity:Float=.20f,val userCanDisableBackgroundAds:Boolean=true,val userCanChangeBackgroundOpacity:Boolean=true,val allowBackgroundAndBannerSameScreen:Boolean=false)
+data class UserAdvertisingPreferences(val allAdsEnabled:Boolean=true,val backgroundAdsEnabled:Boolean=false,val backgroundOpacity:Float=.08f,val personalizedAdsAllowed:Boolean=false,val dismissedCampaigns:Map<String,Instant> = emptyMap())
+fun effectiveOpacity(campaign:SponsoredCampaign,preferences:UserAdvertisingPreferences,configuration:AdvertisingConfiguration):Float{val user=preferences.backgroundOpacity.takeIf{it.isFinite()}?.coerceIn(configuration.minimumBackgroundOpacity,configuration.maximumBackgroundOpacity)?:configuration.defaultBackgroundOpacity;val remote=(campaign.backgroundOpacity?:configuration.defaultBackgroundOpacity).coerceIn(configuration.minimumBackgroundOpacity,configuration.maximumBackgroundOpacity);return minOf(user,remote)}
+fun safeAdvertisingUrl(value:String?):Boolean { if(value.isNullOrBlank())return false;return runCatching{val uri=java.net.URI(value);uri.scheme=="https"&&uri.host!=null&&uri.userInfo.isNullOrBlank()}.getOrDefault(false) }

@@ -1,0 +1,14 @@
+[
+ {"id":"shabla","name":"Шабла","latitude":43.5392,"longitude":28.6116},
+ {"id":"kaliakra","name":"Калиакра","latitude":43.3612,"longitude":28.4652},
+ {"id":"balchik","name":"Балчик","latitude":43.4065,"longitude":28.1629},
+ {"id":"varna","name":"Варна","latitude":43.2141,"longitude":27.9147},
+ {"id":"shkorpilovtsi","name":"Шкорпиловци","latitude":42.9586,"longitude":27.9095},
+ {"id":"obzor","name":"Обзор","latitude":42.8190,"longitude":27.8790},
+ {"id":"nesebar","name":"Несебър","latitude":42.6601,"longitude":27.7206},
+ {"id":"burgas","name":"Бургас","latitude":42.5048,"longitude":27.4626},
+ {"id":"sozopol","name":"Созопол","latitude":42.4173,"longitude":27.6962},
+ {"id":"primorsko","name":"Приморско","latitude":42.2679,"longitude":27.7561},
+ {"id":"ahtopol","name":"Ахтопол","latitude":42.0979,"longitude":27.9398},
+ {"id":"sinemorets","name":"Синеморец","latitude":42.0614,"longitude":27.9785}
+]

@@ -1,0 +1,5 @@
+[
+ {"stationId":"varna","stationName":"Варна","measuredAtUtc":"2026-07-18T09:00:00Z","waterTemperatureC":23.4,"significantWaveHeightM":0.42,"maximumWaveHeightM":0.68,"wavePeriodS":4.8,"waveDirectionDeg":95.0,"windSpeedMs":3.2,"windDirectionDeg":82.0,"latitude":43.190,"longitude":27.940},
+ {"stationId":"burgas","stationName":"Бургас","measuredAtUtc":"2026-07-18T09:10:00Z","waterTemperatureC":24.1,"significantWaveHeightM":0.35,"maximumWaveHeightM":0.57,"wavePeriodS":4.2,"waveDirectionDeg":120.0,"windSpeedMs":2.8,"windDirectionDeg":110.0,"latitude":42.490,"longitude":27.480},
+ {"stationId":"ahtopol","stationName":"Ахтопол","measuredAtUtc":"2026-07-18T08:50:00Z","waterTemperatureC":22.9,"significantWaveHeightM":0.55,"maximumWaveHeightM":0.86,"wavePeriodS":5.1,"waveDirectionDeg":135.0,"windSpeedMs":4.1,"windDirectionDeg":140.0,"latitude":42.100,"longitude":27.940}
+]

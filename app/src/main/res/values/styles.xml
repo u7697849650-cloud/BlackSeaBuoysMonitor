@@ -1,0 +1,1 @@
+<resources><style name="Theme.BlackSeaBuoys" parent="android:style/Theme.Material.Light.NoActionBar"><item name="android:fontFamily">sans</item><item name="android:colorAccent">#006D77</item></style></resources>

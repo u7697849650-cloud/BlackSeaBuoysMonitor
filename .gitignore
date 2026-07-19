@@ -1,0 +1,14 @@
+.gradle/
+local.properties
+**/build/
+*.jks
+*.keystore
+# Android build outputs
+.gradle/
+.kotlin/
+**/build/
+local.properties
+
+# Generated packages
+*.apk
+*.aab
